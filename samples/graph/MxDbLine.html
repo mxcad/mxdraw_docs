@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MxDbLine 示例</title>
+    <link rel="stylesheet" href="../index.css">
+    <script scr="https://unpkg.com/mxdraw@0.1.17/dist/mxdraw.umd.js"></script>
+    <script src="../three.js"></script>
+</head>
+<script>
+    console.log(Mx)
+</script>
+
+<script type="module">
+    import Mx from "../mxdraw.es5.js"
+    import GUI  from "../lil-gui.module.js"
+    
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+            // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            // 选择类型
+            IntelliSelectType: 1,
+            // 是否开启多个选择
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxcad", // canvas元素的id
+            cadFile: "../../demo/buf/$hhhh.dwg.mxb1.wgh",
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        
+        const getPoint = new Mx.MrxDbgUiPrPoint();
+        getPoint.go((status) => {
+            if (status != 0) {
+                return
+            }
+            const pt1 = getPoint.value()
+            let line = new Mx.MxDbLine();
+            line.setPoint1(pt1);   
+            const worldDrawComment = new Mx.McEdGetPointWorldDrawObject();
+            worldDrawComment.setDraw((currentPoint) => {
+                line.setPoint2(currentPoint);
+                // setPoint2 && setPoint2.updateDisplay()
+                worldDrawComment.drawCustomEntity(line);
+            });
+
+            getPoint.setUserDraw(worldDrawComment)
+            getPoint.go((status) => {
+                if (status == Mx.MrxDbgUiPrBaseReturn.kOk) {
+                    Mx.MxFun.getCurrentDraw().addMxEntity(line);
+
+                } else {
+                    console.log('放弃当前操作')
+
+                }
+            })
+            
+            // GUI
+            const gui = new GUI();
+            var setPoint1 = gui.addFolder( 'setPoint1' )
+            var setPoint2 = gui.addFolder( 'setPoint2' )
+            setPoint1.add( line.pt1, 'x' )
+            setPoint1.add( line.pt1, 'y' );
+            setPoint1.add( line.pt1, 'z' );
+            setPoint2.add( line.pt2, 'x' );
+            setPoint2.add( line.pt2, 'y' );
+            setPoint2.add( line.pt2, 'z' );
+            gui.addColor( line, 'color' ).name('setColor')
+            
+            gui.onFinishChange( (event) => {    
+                line.setNeedUpdateDisplay(true)
+            });
+            
+        })
+    })
+
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxcad"></canvas>
+    </div>
+
+</body>
+
+
+</html>

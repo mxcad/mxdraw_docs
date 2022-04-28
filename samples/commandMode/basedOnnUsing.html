@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>basedOnnUsing 示例</title>
+    <link rel="stylesheet" href="../index.css">
+</head>
+<script src="../three.js"></script>
+<script type="module">
+    import Mx from "../mxdraw.es5.js"
+    import GUI from "../lil-gui.module.js"
+    
+
+
+    // 画线的函数
+    function BR_Line() {
+        // 构建取点对象
+        const getPoint = new Mx.MrxDbgUiPrPoint();
+        // 构建动态绘制对象
+        const worldDrawComment = new Mx.McEdGetPointWorldDrawObject();
+        // 开始动态拖动 行为: 鼠标点击画布时只执行一次回调函数，后续点击无效
+        getPoint.go((status) => {
+            if (status !== 0) {
+            return;
+            }
+            // 交互提示
+            getPoint.setMessage("\n指定第一点:");
+
+            // 获取鼠标在画布上的第一个点
+            const pt1 = getPoint.value();
+            // 将第一个点作为起始点
+            let lastPt = pt1.clone();
+            // 设置动态绘制的回调函数
+            worldDrawComment.setDraw((currentPoint, pWorldDraw) => {
+                // 绘制当前鼠标移动点到起始点的线段
+                pWorldDraw.drawLine(currentPoint, lastPt);
+            });
+            // 设置取点对象交互过程中的动态绘制调用对象
+            getPoint.setUserDraw(worldDrawComment)
+            
+            // 开启动态拖动，连续取点，直到ESC退出。 行为: 鼠标点击一下执行一次回调函数
+            getPoint.goWhile((status) => {
+                
+            if (status === 0) {
+                getPoint.setMessage("\n指定下个点:");
+                // 获取第二个点的位置
+                const pt2 = getPoint.value();
+
+                // 拿到Three的场景对象
+                let sence = Mx.MxFun.getCurrentDraw().getScene();
+
+                // 创建一条 从起始点到 当前点击位置的线段
+                let line = Mx.MxThreeJS.createLine(lastPt, pt2, 0xffffff);
+                
+                // 将线段添加到场景中
+                sence.add(line);
+
+                // 将第二点作为起始点
+                lastPt = pt2.clone()
+            }
+            });
+        });
+    }
+   
+
+    Mx.loadCoreCode().then(() => {
+        Mx.MxFun.setIniset({
+                // 启用对象选择功能.
+            EnableIntelliSelect: true,
+            IntelliSelectType: 1,
+            multipleSelect: false,
+        });
+        // 创建控件对象
+        Mx.MxFun.createMxObject({
+            canvasId: "mxcad", // canvas元素的id
+            cadFile: "../../demo/buf/$hhhh.dwg.mxb1.wgh",
+            useWebsocket: false,
+            callback: (mxDrawObject, { canvas, canvasParent }) => {
+
+            },
+        });
+        
+        
+    })
+    
+    
+    const myObject = {
+        registerTheCommand() {
+            // 注册命名
+            Mx.MxFun.addCommand("BR_Line", ()=> {
+                // 是否正在运行某个命令
+                if(Mx.MxFun.isRunningCommand()) {
+                    return
+                }
+
+                BR_Line()
+            })
+            alert("注册成功！输入BR_Line执行命令")
+        },
+        commandText: "BR_Line",
+        executeTheCommand() {
+            Mx.MxFun.sendStringToExecute(this.commandText)
+        },
+        tip: "",
+        commandName: "",
+        content: ""
+    }
+    
+    const gui  = new GUI()
+    
+   
+    gui.add( myObject, 'registerTheCommand' ).name('第一步注册：BR_Line 命令')
+
+    gui.add( myObject, 'commandText' ).name('输入命令(BR_Line)').$input.onkeydown = function(e) {
+     
+        Mx.MxFun.setCommandLineInputData(myObject.commandText, e.keyCode)
+    }
+    gui.add( myObject, 'executeTheCommand' ).name('执行命令(BR_Line)')
+    const tip = gui.add( myObject, 'tip' ).name('提示')
+    const commandName = gui.add( myObject, 'commandName' ).name('当前执行的命令')
+    const content = gui.add( myObject, 'content' ).name('命令行内容')
+    Mx.MxFun.listenForCommandLineInput(({msCmdTip, msCmdDisplay, msCmdText})=> {
+        tip.setValue(msCmdTip)
+        commandName.setValue(msCmdText)
+        content.setValue(msCmdDisplay)
+    })
+</script>
+
+<body>
+    <div class="mxdiv">
+        <canvas id="mxcad"></canvas>
+    </div>
+</body>
+
+
+</html>
